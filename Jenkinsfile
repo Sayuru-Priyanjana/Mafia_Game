@@ -1,65 +1,64 @@
-// pipeline {
-//     agent any
-
-//     environment {
-//         DOCKERHUB_CREDENTIALS = 'dockerhub'
-//         DOCKERHUB_USERNAME = 'sayurupriyanjana'  // <-- replace with your Docker Hub username
-//         IMAGE_TAG = "build-${env.BUILD_NUMBER}"
-//     }
-
-//     stages {
-//         stage('Checkout Code') {
-//             steps {
-//                 git branch: 'main', url: 'https://github.com/Sayuru-Priyanjana/Mafia_Game.git'
-//             }
-//         }
-
-//         stage('Build and Push with Docker Compose') {
-//             steps {
-//                 script {
-//                     docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
-
-//                         // Build images defined in docker-compose.yml
-//                         sh 'docker-compose build'
-
-//                         // Tag and push both frontend and backend
-//                         sh """
-//                         docker tag mafia_game-frontend ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG}
-//                         docker tag mafia_game-backend ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG}
-
-//                         docker push ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG}
-//                         docker push ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG}
-
-//                         # Optional: push 'latest' tag too
-//                         docker tag mafia_game-frontend ${DOCKERHUB_USERNAME}/mafia-frontend:latest
-//                         docker tag mafia_game-backend ${DOCKERHUB_USERNAME}/mafia-backend:latest
-//                         docker push ${DOCKERHUB_USERNAME}/mafia-frontend:latest
-//                         docker push ${DOCKERHUB_USERNAME}/mafia-backend:latest
-//                         """
-//                     }
-//                 }
-//             }
-//         }
-//     }
-
-//     post {
-//         success {
-//             echo "✅ Successfully built and pushed both images to Docker Hub."
-//         }
-//         failure {
-//             echo "❌ Build failed! Check logs."
-//         }
-//     }
-// }
-
-
 pipeline {
     agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = 'dockerhub'      // Jenkins credentials ID
+        DOCKERHUB_USERNAME = 'sayurupriyanjana'            // your Docker Hub username
+        IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+    }
+
     stages {
-        stage('Test') {
+        stage('Checkout Code') {
             steps {
-                echo '✅ Jenkinsfile is detected and running correctly!'
+                checkout scm
             }
+        }
+
+        stage('Build Docker Images with Compose') {
+            steps {
+                script {
+                    // Build all services defined in docker-compose.yml
+                    sh "docker-compose build"
+                }
+            }
+        }
+
+        stage('Tag Images for Docker Hub') {
+            steps {
+                script {
+                    // Tag backend and frontend images
+                    sh """
+                    docker tag mafia_backend ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG}
+                    docker tag mafia_backend ${DOCKERHUB_USERNAME}/mafia-backend:latest
+                    docker tag mafia_frontend ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG}
+                    docker tag mafia_frontend ${DOCKERHUB_USERNAME}/mafia-frontend:latest
+                    """
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                        sh """
+                        docker push ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/mafia-backend:latest
+                        docker push ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/mafia-frontend:latest
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Successfully built and pushed both backend and frontend images!"
+        }
+        failure {
+            echo "❌ Build or push failed. Check Jenkins logs for details."
         }
     }
 }
