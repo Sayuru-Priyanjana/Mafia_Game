@@ -14,24 +14,15 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images with Compose') {
+// --- NEW: Explicit Build & Tag Stage ---
+        stage('Build and Tag Images') {
             steps {
                 script {
-                    sh "docker compose build"
-                }
-            }
-        }
-
-        stage('Tag Images for Docker Hub') {
-            steps {
-                script {
+                    echo "Building Backend..."
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-backend:latest ./backend"
                     
-                    sh """
-                    docker tag mafia_backend ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG}
-                    docker tag mafia_backend ${DOCKERHUB_USERNAME}/mafia-backend:latest
-                    docker tag mafia_frontend ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG}
-                    docker tag mafia_frontend ${DOCKERHUB_USERNAME}/mafia-frontend:latest
-                    """
+                    echo "Building Frontend..."
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-frontend:latest ./frontend"
                 }
             }
         }
