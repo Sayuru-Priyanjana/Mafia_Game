@@ -60,4 +60,35 @@ pipeline {
             echo "Build or push failed. Check Jenkins logs for details."
         }
     }
+
+
+    stage('Deploy to EC2') {
+            steps {
+                sshagent(['ec2-ssh-key']) {
+                    script {
+                        def EC2_IP = "52.66.24.111" // <--- PUT YOUR EC2 IP HERE
+                        
+                        // 1. Copy the deployment compose file to the server
+                        sh "scp -o StrictHostKeyChecking=no docker-compose.deploy.yml ubuntu@${EC2_IP}:/home/ubuntu/docker-compose.yml"
+                        
+                        // 2. SSH in and restart containers
+                        def remoteCommand = """
+                            cd /home/ubuntu
+                            
+                            # Create an .env file so Docker knows what 'IMAGE_TAG' is
+                            echo "IMAGE_TAG=${IMAGE_TAG}" > .env
+                            
+                            # Pull new images and restart
+                            sudo docker compose pull
+                            sudo docker compose up -d
+                        """
+                        
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '${remoteCommand}'"
+                    }
+                }
+            }
+        }
+
+
+
 }

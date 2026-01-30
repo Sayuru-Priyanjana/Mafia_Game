@@ -16,7 +16,8 @@ export default function Register() {
     setLoading(true);
     setMessage("");
 
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
 
     try {
       const res = await axios.post(`${API_URL}/register`, {

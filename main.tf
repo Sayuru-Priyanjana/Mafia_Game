@@ -104,7 +104,30 @@ resource "aws_instance" "web_server" {
     destination = "/home/ubuntu/docker-compose.yml"
   }
 
-  # 4. Install Docker & Run App
+#   # 4. Install Docker & Run App
+#   provisioner "remote-exec" {
+#     inline = [
+#       "sudo apt-get update -y",
+#       "sudo apt-get install -y ca-certificates curl gnupg",
+#       "sudo install -m 0755 -d /etc/apt/keyrings",
+#       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg",
+#       "sudo chmod a+r /etc/apt/keyrings/docker.gpg",
+#       "echo \"deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \"$(. /etc/os-release && echo \"$VERSION_CODENAME\")\" stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+#       "sudo apt-get update -y",
+#       "sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+#       "sudo usermod -aG docker ubuntu",
+#       "cd /home/ubuntu",
+
+#       # Replace ${VITE_API_URL} in docker-compose.yml with the actual public IP
+#       "sed -i 's|\\$${VITE_API_URL}|http://${self.public_ip}:5000|g' docker-compose.yml",
+      
+#       "sudo docker compose build --no-cache",
+#       "sudo docker compose up -d"
+#     ]
+#   }
+
+
+# 4. Install Docker Only
   provisioner "remote-exec" {
     inline = [
       "sudo apt-get update -y",
@@ -115,14 +138,10 @@ resource "aws_instance" "web_server" {
       "echo \"deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \"$(. /etc/os-release && echo \"$VERSION_CODENAME\")\" stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
       "sudo apt-get update -y",
       "sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
-      "sudo usermod -aG docker ubuntu",
-      "cd /home/ubuntu",
-
-      # Replace ${VITE_API_URL} in docker-compose.yml with the actual public IP
-      "sed -i 's|\\$${VITE_API_URL}|http://${self.public_ip}:5000|g' docker-compose.yml",
-      
-      "sudo docker compose build --no-cache",
-      "sudo docker compose up -d"
+      "sudo usermod -aG docker ubuntu" 
+      # STOP HERE. Do not run 'docker compose up'. Jenkins will do that.
     ]
   }
+
+  
 }

@@ -1,10 +1,57 @@
+# version: '3.8'
+# services:
+#   backend:
+#     image: mafia_backend
+#     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
+#     container_name: mafia_backend
+#     ports:
+#       - "5000:5000"
+#     environment:
+#       - NODE_ENV=development
+#       - MONGODB_URI=mongodb://mongo:27017/auth_db
+#     depends_on:
+#       - mongo
+#     volumes:
+#       - ./backend:/app
+#       - /app/node_modules
+#     restart: unless-stopped
+
+#   frontend:
+#     image: mafia_frontend
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#       args:
+#         - VITE_API_URL=${VITE_API_URL}  # <--- MUST MATCH THIS EXACTLY
+#     container_name: mafia_frontend
+#     ports:
+#       - "5173:5173"
+#     depends_on:
+#       - backend
+#     volumes:
+#       - /app/node_modules
+#     restart: unless-stopped
+
+#   mongo:
+#     image: mongo:6
+#     container_name: mongo-db
+#     ports:
+#       - "27017:27017"
+#     environment:
+#       - MONGO_INITDB_DATABASE=auth_db
+#     volumes:
+#       - mongo_data:/data/db
+#     restart: unless-stopped
+
+# volumes:
+#   mongo_data:
+
 version: '3.8'
 services:
   backend:
-    image: mafia_backend
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: sayurupriyanjana/mafia-backend:${IMAGE_TAG:-latest} # Use variable or default to latest
     container_name: mafia_backend
     ports:
       - "5000:5000"
@@ -13,25 +60,15 @@ services:
       - MONGODB_URI=mongodb://mongo:27017/auth_db
     depends_on:
       - mongo
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     restart: unless-stopped
 
   frontend:
-    image: mafia_frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL}  # <--- MUST MATCH THIS EXACTLY
+    image: sayurupriyanjana/mafia-frontend:${IMAGE_TAG:-latest}
     container_name: mafia_frontend
     ports:
       - "5173:5173"
     depends_on:
       - backend
-    volumes:
-      - /app/node_modules
     restart: unless-stopped
 
   mongo:

@@ -11,7 +11,8 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
     try {
       const res = await axios.post(`${API_URL}/login`, form);
       alert(`Login successful! Welcome ${res.data.user?.firstName || ""}`);
@@ -49,7 +50,7 @@ export default function Login() {
         <div style={{ marginTop: "20px", textAlign: "center", fontSize: "0.9rem" }}>
           <span style={{ color: "#a0a0a0" }}>New here? </span>
           <Link to="/register" style={{ fontWeight: "600" }}>
-            Join the Family
+            Join the Mafia Family
           </Link>
         </div>
       </div>
