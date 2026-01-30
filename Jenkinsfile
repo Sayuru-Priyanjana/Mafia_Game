@@ -50,19 +50,9 @@ pipeline {
                 }
             }
         }
-    }
-
-    post {
-        success {
-            echo "Successfully built and pushed both backend and frontend images!"
-        }
-        failure {
-            echo "Build or push failed. Check Jenkins logs for details."
-        }
-    }
 
 
-    stage('Deploy to EC2') {
+            stage('Deploy to EC2') {
             steps {
                 sshagent(['ec2-ssh-key']) {
                     script {
@@ -89,6 +79,14 @@ pipeline {
             }
         }
 
+    }
 
-
+    post {
+        success {
+            echo "Successfully built and pushed both backend and frontend images!"
+        }
+        failure {
+            echo "Build or push failed. Check Jenkins logs for details."
+        }
+    }
 }
