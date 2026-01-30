@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  backend:
+    image: sayurupriyanjana/mafia-backend:${IMAGE_TAG}
+    container_name: mafia_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/auth_db
+    depends_on:
+      - mongo
+    restart: always
+
+  frontend:
+    image: sayurupriyanjana/mafia-frontend:${IMAGE_TAG}
+    container_name: mafia_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: always
+
+  mongo:
+    image: mongo:6
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=auth_db
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+volumes:
+  mongo_data:
