@@ -1,13 +1,25 @@
-FROM node:22
+FROM node:20-alpine
+
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 WORKDIR /app
 
-COPY package*.json ./
+# Copy package files and install dependencies first
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-RUN npm install
-
+# Copy the rest of the source code
 COPY . .
 
+# Run the build
+RUN npm run build
+
+# Check if dist exists (for debugging logs during build)
+RUN ls -la dist
+
+# Expose the port
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# Start the preview server
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]

@@ -8,6 +8,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(cors({
+    origin: '*'
+}));
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/authapp';
 // Connect to MongoDB

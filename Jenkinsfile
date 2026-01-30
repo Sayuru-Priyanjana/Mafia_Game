@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = 'dockerhub'                  // Jenkins credentials ID
-        DOCKERHUB_USERNAME = 'sayurupriyanjana'             // Docker Hub username
+        DOCKERHUB_CREDENTIALS = 'dockerhub'                 
+        DOCKERHUB_USERNAME = 'sayurupriyanjana'             
         IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
     }
 
@@ -25,7 +25,7 @@ pipeline {
         stage('Tag Images for Docker Hub') {
             steps {
                 script {
-                    // Tag backend and frontend images
+                    
                     sh """
                     docker tag mafia_backend ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG}
                     docker tag mafia_backend ${DOCKERHUB_USERNAME}/mafia-backend:latest
@@ -54,10 +54,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Successfully built and pushed both backend and frontend images!"
+            echo "Successfully built and pushed both backend and frontend images!"
         }
         failure {
-            echo "❌ Build or push failed. Check Jenkins logs for details."
+            echo "Build or push failed. Check Jenkins logs for details."
         }
     }
 }

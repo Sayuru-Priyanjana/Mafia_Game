@@ -1,6 +1,7 @@
+version: '3.8'
 services:
   backend:
-    image: mafia_backend          # <-- explicitly name the image
+    image: mafia_backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -18,19 +19,18 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: mafia_frontend         # <-- explicitly name the image
+    image: mafia_frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}  # <--- MUST MATCH THIS EXACTLY
     container_name: mafia_frontend
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:5000
     depends_on:
       - backend
     volumes:
-      - ./frontend:/app
       - /app/node_modules
     restart: unless-stopped
 
