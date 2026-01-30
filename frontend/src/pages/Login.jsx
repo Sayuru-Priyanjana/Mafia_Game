@@ -50,7 +50,7 @@ export default function Login() {
         <div style={{ marginTop: "20px", textAlign: "center", fontSize: "0.9rem" }}>
           <span style={{ color: "#a0a0a0" }}>New here? </span>
           <Link to="/register" style={{ fontWeight: "600" }}>
-            Join the Mafia Family
+            Join the Mafia Family test
           </Link>
         </div>
       </div>
