@@ -4,9 +4,8 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub'                 
         DOCKERHUB_USERNAME    = 'sayurupriyanjana'             
-        IMAGE_TAG             = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        // REMOVED IMAGE_TAG from here because code isn't checked out yet!
         
-        // AWS Credentials binding for Terraform
         AWS_CREDS = credentials('aws-credentials') 
         AWS_ACCESS_KEY_ID     = "${AWS_CREDS_USR}"
         AWS_SECRET_ACCESS_KEY = "${AWS_CREDS_PSW}"
@@ -17,6 +16,11 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 checkout scm
+                script {
+                    // CALCULATE TAG HERE (After checkout)
+                    env.IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "Image Tag Generated: ${env.IMAGE_TAG}"
+                }
             }
         }
 
@@ -24,10 +28,10 @@ pipeline {
             steps {
                 script {
                     echo "Building Backend..."
-                    sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-backend:latest ./backend"
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-backend:${env.IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-backend:latest ./backend"
                     
                     echo "Building Frontend..."
-                    sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-frontend:latest ./frontend"
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-frontend:${env.IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-frontend:latest ./frontend"
                 }
             }
         }
@@ -37,9 +41,9 @@ pipeline {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
                         sh """
-                        docker push ${DOCKERHUB_USERNAME}/mafia-backend:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/mafia-backend:${env.IMAGE_TAG}
                         docker push ${DOCKERHUB_USERNAME}/mafia-backend:latest
-                        docker push ${DOCKERHUB_USERNAME}/mafia-frontend:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/mafia-frontend:${env.IMAGE_TAG}
                         docker push ${DOCKERHUB_USERNAME}/mafia-frontend:latest
                         """
                     }
@@ -50,17 +54,13 @@ pipeline {
         stage('Provision Infrastructure') {
             steps {
                 script {
-                    // 1. Init and Apply
                     sh "terraform init"
                     sh "terraform apply -auto-approve"
                     
-                    // 2. Capture IP
                     env.EC2_IP = sh(script: "terraform output -raw ec2_public_ip", returnStdout: true).trim()
                     
                     echo "Instance created at: ${env.EC2_IP}"
                     echo "Waiting 60 seconds for EC2 instance to initialize SSH..."
-                    
-                    // 3. CRITICAL: Wait for SSH to wake up
                     sleep 60
                 }
             }
@@ -69,19 +69,16 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 script {
-                    // Set key permissions
                     sh "chmod 400 mafia-key.pem"
                     
-                    // 1. Copy docker-compose file
+                    // Copy docker-compose
                     sh "scp -i mafia-key.pem -o StrictHostKeyChecking=no docker-compose.deploy.yml ubuntu@${env.EC2_IP}:/home/ubuntu/docker-compose.yml"
                     
-                    // 2. SSH and Deploy
-                    // We use a single multi-line string. 
-                    // Note: We echo the TAG into .env so Docker Compose picks it up automatically.
+                    // Deploy
                     sh """
                         ssh -i mafia-key.pem -o StrictHostKeyChecking=no ubuntu@${env.EC2_IP} '
                             cd /home/ubuntu
-                            echo "IMAGE_TAG=${IMAGE_TAG}" > .env
+                            echo "IMAGE_TAG=${env.IMAGE_TAG}" > .env
                             sudo docker compose pull
                             sudo docker compose up -d --remove-orphans
                         '

@@ -11,7 +11,6 @@ provider "aws" {
   region = "ap-south-1"
 }
 
-# --- Key Pair ---
 resource "tls_private_key" "pk" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -28,7 +27,6 @@ resource "local_file" "ssh_key" {
   file_permission = "0400"
 }
 
-# --- Security Group ---
 resource "aws_security_group" "web_sg" {
   name        = "mafia-web-sg"
   description = "Allow SSH and App traffic"
@@ -59,10 +57,9 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# --- EC2 Instance ---
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical
+  owners      = ["099720109477"]
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
@@ -75,7 +72,6 @@ resource "aws_instance" "web_server" {
   key_name               = aws_key_pair.kp.key_name
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
-  # Provisioner connection settings
   connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -83,7 +79,6 @@ resource "aws_instance" "web_server" {
     host        = self.public_ip
   }
 
-  # Install Docker Only
   provisioner "remote-exec" {
     inline = [
       "sudo apt-get update -y",
@@ -91,7 +86,8 @@ resource "aws_instance" "web_server" {
       "sudo install -m 0755 -d /etc/apt/keyrings",
       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg",
       "sudo chmod a+r /etc/apt/keyrings/docker.gpg",
-      "echo \"deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \"$(. /etc/os-release && echo \"$VERSION_CODENAME\")\" stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+      # Simplified the architecture detection command to avoid escaping hell
+      "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
       "sudo apt-get update -y",
       "sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
       "sudo usermod -aG docker ubuntu"
@@ -99,7 +95,6 @@ resource "aws_instance" "web_server" {
   }
 }
 
-# --- Output the IP for Jenkins ---
 output "ec2_public_ip" {
   value = aws_instance.web_server.public_ip
 }
