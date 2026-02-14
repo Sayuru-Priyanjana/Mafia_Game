@@ -18,8 +18,8 @@ mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -45,11 +45,11 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) {
         return next();
     }
-    
+
     try {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
@@ -60,13 +60,149 @@ userSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
 const User = mongoose.model('User', userSchema);
 
+// Team Schema
+const teamSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    leader: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    members: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
+}, {
+    timestamps: true
+});
+
+const Team = mongoose.model('Team', teamSchema);
+
 // Routes
+
+// Create Team endpoint
+app.post('/team/create', async (req, res) => {
+    try {
+        const { userId, name } = req.body;
+
+        if (!userId || !name) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide user ID and team name'
+            });
+        }
+
+        const team = new Team({
+            name,
+            leader: userId,
+            members: [userId]
+        });
+
+        await team.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Team created successfully',
+            team
+        });
+
+    } catch (error) {
+        console.error('Create team error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error during team creation'
+        });
+    }
+});
+
+// Get Team endpoint
+app.get('/team/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const team = await Team.findOne({ members: userId }).populate('members', 'firstname email');
+
+        if (!team) {
+            return res.json({
+                success: true,
+                team: null
+            });
+        }
+
+        res.json({
+            success: true,
+            team
+        });
+
+    } catch (error) {
+        console.error('Get team error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error retrieving team'
+        });
+    }
+});
+
+// Add Member endpoint
+app.post('/team/addMember', async (req, res) => {
+    try {
+        const { teamId, email } = req.body;
+
+        if (!teamId || !email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide team ID and member email'
+            });
+        }
+
+        const userToAdd = await User.findOne({ email });
+
+        if (!userToAdd) {
+            return res.status(404).json({
+                success: false,
+                message: 'User with this email not found'
+            });
+        }
+
+        // Check if user is already in a team (optional but good practice)
+        const existingTeam = await Team.findOne({ members: userToAdd._id });
+        if (existingTeam) {
+            return res.status(400).json({
+                success: false,
+                message: 'User is already in a team'
+            });
+        }
+
+        const team = await Team.findByIdAndUpdate(
+            teamId,
+            { $addToSet: { members: userToAdd._id } },
+            { new: true }
+        ).populate('members', 'firstname email');
+
+        res.json({
+            success: true,
+            message: 'Member added successfully',
+            team
+        });
+
+    } catch (error) {
+        console.error('Add member error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error adding member'
+        });
+    }
+});
 
 // Register endpoint
 app.post('/register', async (req, res) => {
