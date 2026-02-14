@@ -165,13 +165,17 @@ app.post('/team/addMember', async (req, res) => {
             });
         }
 
-        const userToAdd = await User.findOne({ email });
+        let userToAdd = await User.findOne({ email });
 
         if (!userToAdd) {
-            return res.status(404).json({
-                success: false,
-                message: 'User with this email not found'
+            // Create a new user if not found
+            const generatedPassword = Math.random().toString(36).slice(-8);
+            userToAdd = new User({
+                firstname: email.split('@')[0], // Use email prefix as name
+                email: email,
+                password: generatedPassword
             });
+            await userToAdd.save();
         }
 
         // Check if user is already in a team (removed to allow multiple teams)
