@@ -3,13 +3,9 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub'                 
-        DOCKERHUB_USERNAME    = 'sayurupriyanjana'             
-        // REMOVED IMAGE_TAG from here because code isn't checked out yet!
-        
-        AWS_CREDS = credentials('aws-credentials') 
-        AWS_ACCESS_KEY_ID     = "${AWS_CREDS_USR}"
-        AWS_SECRET_ACCESS_KEY = "${AWS_CREDS_PSW}"
+        DOCKERHUB_USERNAME    = 'sayurupriyanjana' 
         AWS_REGION            = "ap-south-1"
+        // Move credential binding inside stages or use a specific block to avoid null assignment
     }
 
     stages {
@@ -17,9 +13,7 @@ pipeline {
             steps {
                 checkout scm
                 script {
-                    // CALCULATE TAG HERE (After checkout)
                     env.IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    echo "Image Tag Generated: ${env.IMAGE_TAG}"
                 }
             }
         }
@@ -27,10 +21,7 @@ pipeline {
         stage('Build and Tag Images') {
             steps {
                 script {
-                    echo "Building Backend..."
                     sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-backend:${env.IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-backend:latest ./backend"
-                    
-                    echo "Building Frontend..."
                     sh "docker build -t ${DOCKERHUB_USERNAME}/mafia-frontend:${env.IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/mafia-frontend:latest ./frontend"
                 }
             }
@@ -53,15 +44,15 @@ pipeline {
 
         stage('Provision Infrastructure') {
             steps {
-                script {
-                    sh "terraform init"
-                    sh "terraform apply -auto-approve"
-                    
-                    env.EC2_IP = sh(script: "terraform output -raw ec2_public_ip", returnStdout: true).trim()
-                    
-                    echo "Instance created at: ${env.EC2_IP}"
-                    echo "Waiting 60 seconds for EC2 instance to initialize SSH..."
-                    sleep 60
+                // Use withCredentials to safely inject AWS keys for Terraform
+                withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                    script {
+                        sh "terraform init"
+                        sh "terraform apply -auto-approve"
+                        
+                        env.EC2_IP = sh(script: "terraform output -raw ec2_public_ip", returnStdout: true).trim()
+                        sleep 60
+                    }
                 }
             }
         }
@@ -70,11 +61,7 @@ pipeline {
             steps {
                 script {
                     sh "chmod 400 mafia-key.pem"
-                    
-                    // Copy docker-compose
                     sh "scp -i mafia-key.pem -o StrictHostKeyChecking=no docker-compose.deploy.yml ubuntu@${env.EC2_IP}:/home/ubuntu/docker-compose.yml"
-                    
-                    // Deploy
                     sh """
                         ssh -i mafia-key.pem -o StrictHostKeyChecking=no ubuntu@${env.EC2_IP} '
                             cd /home/ubuntu
