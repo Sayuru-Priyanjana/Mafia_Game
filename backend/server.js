@@ -174,7 +174,8 @@ app.post('/team/addMember', async (req, res) => {
             });
         }
 
-        // Check if user is already in a team (optional but good practice)
+        // Check if user is already in a team (removed to allow multiple teams)
+        /*
         const existingTeam = await Team.findOne({ members: userToAdd._id });
         if (existingTeam) {
             return res.status(400).json({
@@ -182,6 +183,7 @@ app.post('/team/addMember', async (req, res) => {
                 message: 'User is already in a team'
             });
         }
+        */
 
         const team = await Team.findByIdAndUpdate(
             teamId,
