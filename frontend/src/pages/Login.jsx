@@ -15,7 +15,9 @@ export default function Login() {
     const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
     try {
       const res = await axios.post(`${API_URL}/login`, form);
-      alert(`Login successful! Welcome! ${res.data.user?.firstName || ""}`);
+      // alert(`Login successful! Welcome! ${res.data.user?.firstName || ""}`);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      window.location.href = "/";
     } catch (err) {
       alert(err.response?.data?.message || "Login failed with some errors");
     }
