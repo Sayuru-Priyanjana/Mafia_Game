@@ -15,7 +15,7 @@ export default function Login() {
     const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
     try {
       const res = await axios.post(`${API_URL}/login`, form);
-      alert(`Login successful! Welcome ${res.data.user?.firstName || ""}`);
+      alert(`Login successful! Welcome! ${res.data.user?.firstName || ""}`);
     } catch (err) {
       alert(err.response?.data?.message || "Login failed with some errors");
     }
@@ -26,7 +26,7 @@ export default function Login() {
       <div className="glass-card">
         <h1>Login</h1>
         <p style={{ textAlign: "center", marginBottom: "20px", color: "#a0a0a0" }}>
-          Welcome back, Boss.
+          Welcome back, Boss!!.
         </p>
         <form onSubmit={handleSubmit}>
           <input

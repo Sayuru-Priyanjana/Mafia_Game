@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = 'dockerhub'                 
         DOCKERHUB_USERNAME    = 'sayurupriyanjana' 
         AWS_REGION            = "ap-south-1"
-        // Move credential binding inside stages or use a specific block to avoid null assignment
+       
     }
 
     stages {
@@ -44,7 +44,7 @@ pipeline {
 
         stage('Provision Infrastructure') {
             steps {
-                // Use withCredentials to safely inject AWS keys for Terraform
+                
                 withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                     script {
                         sh "terraform init"
