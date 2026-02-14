@@ -47,7 +47,7 @@ pipeline {
             steps {
                 sshagent(['ec2-ssh-key']) {
                     script {
-                        def EC2_IP = "52.66.24.111" // <--- PUT YOUR EC2 IP HERE
+                        def EC2_IP = "13.233.146.178" // <--- PUT YOUR EC2 IP HERE
                         
                         // 1. Copy the deployment compose file to the server
                         sh "scp -o StrictHostKeyChecking=no docker-compose.deploy.yml ubuntu@${EC2_IP}:/home/ubuntu/docker-compose.yml"
