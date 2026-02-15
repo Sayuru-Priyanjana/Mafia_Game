@@ -26,7 +26,7 @@ export default function Login() {
   return (
     <div className="page-container">
       <div className="glass-card">
-        <h1>Login</h1>
+        <h1>Sayuru Priyanjana</h1>
         <p style={{ textAlign: "center", marginBottom: "20px", color: "#a0a0a0" }}>
           Welcome back, Boss.
         </p>
