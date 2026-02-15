@@ -28,7 +28,7 @@ export default function Login() {
       <div className="glass-card">
         <h1>Login</h1>
         <p style={{ textAlign: "center", marginBottom: "20px", color: "#a0a0a0" }}>
-          Welcome back, Boss!!.
+          Welcome back, Boss.
         </p>
         <form onSubmit={handleSubmit}>
           <input
